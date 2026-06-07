@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Model weights (large files)
+model/twitter-roberta/*.safetensors
+model/twitter-roberta/*.bin
+model/cache/
+
+# Training artifacts
+train/results/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Claude Code (if applicable)
+.claude/
+
+# One-shot utility scripts
+upload_to_hf.py
