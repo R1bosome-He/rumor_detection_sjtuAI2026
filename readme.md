@@ -54,6 +54,26 @@ python main.py                   python -m inference.ensemble --eval
 
 因此我们去掉 TF-IDF，采用 **RoBERTa : BiLSTM = 2 : 1 加权投票**：RoBERTa 拥有 1.25 亿参数与 5800 万条推文的预训练先验，对推文的语义理解远强于 BiLSTM，赋予更高权重合理。当两模型意见一致时（占 89.3%），直接输出结果；不一致时 RoBERTa 以 2:1 权重压倒 BiLSTM。最终准确率回升至与原 RoBERTa 持平，同时保留了 BiLSTM 作为互补视角的诊断价值。
 
+## 💬 LLM 解释
+
+分类模型输出标签后，系统调用 DeepSeek-Reasoner 对结果进行自然语言解释。流程如下：
+
+```
+推文文本 + 分类标签 + 模型提取的 attention 证据词
+        │
+        ▼
+   构造 prompt（指导 LLM 以分析口吻输出 2-4 句中文）
+        │
+        ▼
+   POST → https://models.sjtu.edu.cn/api/v1/chat/completions
+        │
+        ▼
+   返回解释: "该推文使用了带有情绪煽动性的大写词汇 BREAKING，
+            且未引用任何官方来源，符合未经验证的突发消息特征。"
+```
+
+证据词（如 `BREAKING`、`shot`、`unarmed`）来自 RoBERTa 最后一层 attention 对 `[CLS]` token 的权重，经 BPE 字符合并和停用词过滤后取 top-5，注入 prompt 帮助 LLM 聚焦关键信息。API key 通过环境变量 `LLM_API_KEY` 或在 `main.py` 运行时直接输入设置。
+
 ## 📁 项目结构
 
 ```
