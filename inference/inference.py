@@ -98,10 +98,19 @@ class RumourDetectClass:
         self.threshold = load_threshold(self.model_dir)
 
         # Load model & tokenizer: local first, fall back to HuggingFace Hub
-        if (self.model_dir / "config.json").exists():
+        has_config = (self.model_dir / "config.json").exists()
+        has_weights = (
+            (self.model_dir / "model.safetensors").exists()
+            or (self.model_dir / "pytorch_model.bin").exists()
+        )
+        if has_config and has_weights:
             model_path = str(self.model_dir)
         else:
-            print(f"Local model not found, loading from HuggingFace: {HF_REPO_ID}")
+            if has_config and not has_weights:
+                print("Local config found but weights missing, "
+                      f"downloading from HuggingFace: {HF_REPO_ID}")
+            else:
+                print(f"Local model not found, loading from HuggingFace: {HF_REPO_ID}")
             model_path = HF_REPO_ID
 
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
