@@ -40,6 +40,17 @@ class LLMConfig:
     max_tokens: int = 512
     timeout: int = 30
 
+    def __post_init__(self):
+        """如果 api_key 为空字符串，阻止后续调用并给出清晰的设置指引"""
+        if not self.api_key.strip():
+            raise ValueError(
+                "LLM API key 未设置。请通过以下任一方式提供：\n"
+                "  1. 设置环境变量: export LLM_API_KEY=your-key\n"
+                "  2. 设置环境变量: set LLM_API_KEY=your-key  (Windows CMD)\n"
+                "  3. 设置环境变量: $env:LLM_API_KEY='your-key' (PowerShell)\n"
+                "  4. 修改 llm.py 中 LLMConfig 的默认 api_key 值"
+            )
+
     @classmethod
     def from_env(cls) -> "LLMConfig":
         """从环境变量读取配置，不存在则使用默认值"""
@@ -68,11 +79,8 @@ SYSTEM_PROMPT = (
     "你的任务是为该判断结果生成一段清晰、简洁的中文解释。\n"
     "\n"
     "解释原则：\n"
-    "- 如果判定为谣言（label=1）：说明该推文为什么像谣言 —— "
-    "例如：包含未经证实的说法、使用煽动性语言、缺乏可信来源、"
-    "情绪操控、与已知事实不符等。\n"
-    "- 如果判定为非谣言（label=0）：说明该推文为什么看起来可信 —— "
-    "例如：报道客观事实、引用了官方或可查证来源、语气中立、信息可验证等。\n"
+    "- 如果判定为谣言（label=1）：说明该推文为什么像谣言"
+    "- 如果判定为非谣言（label=0）：说明该推文为什么看起来可信"
     "\n"
     "要求：\n"
     "- 解释长度为 2-4 句中文。\n"
