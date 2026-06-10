@@ -14,7 +14,7 @@ LLM 谣言检测结果解释模块
     - 任何兼容 OpenAI chat/completions 接口的服务
 
 环境变量:
-    LLM_API_KEY       API 密钥 (可选，已内置默认值)
+    LLM_API_KEY       API 密钥 (不设置则运行时会提示输入)
     LLM_BASE_URL      接口地址 (可选，默认 https://models.sjtu.edu.cn/api/v1)
     LLM_MODEL         模型名称 (可选，默认 deepseek-reasoner)
 """
@@ -22,6 +22,22 @@ LLM 谣言检测结果解释模块
 import os
 from dataclasses import dataclass
 from typing import Optional, List, Dict
+
+# 运行时注入的 key，优先级高于环境变量
+_runtime_key: Optional[str] = None
+
+
+def set_api_key(key: str):
+    """在程序运行时设置 API key（无需修改环境变量）"""
+    global _runtime_key
+    _runtime_key = key.strip()
+
+
+def _get_api_key() -> str:
+    """获取 API key：set_api_key() > 环境变量 > 空字符串"""
+    if _runtime_key:
+        return _runtime_key
+    return os.environ.get("LLM_API_KEY", "")
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -33,7 +49,7 @@ from typing import Optional, List, Dict
 class LLMConfig:
     """LLM API 配置，支持从环境变量覆盖"""
 
-    api_key: str = "sk-qTuQYYdsMw21GBbJHbQfZA"
+    api_key: str = ""  # 必须通过环境变量 LLM_API_KEY 设置
     base_url: str = "https://models.sjtu.edu.cn/api/v1"
     model: str = "deepseek-reasoner"
     temperature: float = 0.3
@@ -53,12 +69,15 @@ class LLMConfig:
 
     @classmethod
     def from_env(cls) -> "LLMConfig":
-        """从环境变量读取配置，不存在则使用默认值"""
-        api_key = os.environ.get(
-            "LLM_API_KEY", "sk-qTuQYYdsMw21GBbJHbQfZA"
-        )
+        """从 set_api_key() 或环境变量读取配置"""
+        api_key = _get_api_key()
         if not api_key:
-            raise ValueError("请设置环境变量 LLM_API_KEY")
+            raise ValueError(
+                "LLM API key 未设置。请通过以下方式提供：\n"
+                "  设置环境变量: export LLM_API_KEY=your-key  (Linux/macOS)\n"
+                "  设置环境变量: set LLM_API_KEY=your-key    (Windows CMD)\n"
+                "  或运行后在提示符下直接输入"
+            )
         return cls(
             api_key=api_key,
             base_url=os.environ.get(
