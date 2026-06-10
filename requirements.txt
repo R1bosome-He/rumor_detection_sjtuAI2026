@@ -1,7 +1,8 @@
-# Full pipeline: training + inference + evaluation
+# Full pipeline: training + inference + evaluation + LLM explanation
 pandas
 numpy
 torch
 scikit-learn
 transformers
 huggingface_hub
+requests
