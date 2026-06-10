@@ -35,5 +35,18 @@ Thumbs.db
 # Claude Code (if applicable)
 .claude/
 
+# GloVe pretrained embeddings (large file, ~4 GB)
+model/bilstm_attention/glove.twitter.27B.200d.txt
+model/bilstm_attention/glove.zip
+
+# BiLSTM + TF-IDF model checkpoints (generated, not versioned)
+model/bilstm_attention/checkpoint.pt
+model/bilstm_attention/vocab.json
+model/bilstm_attention/threshold.json
+model/tfidf_lr/pipeline.pkl
+model/tfidf_lr/classifier.pkl
+model/tfidf_lr/threshold.json
+model/twitter-roberta/threshold.json
+
 # One-shot utility scripts
 upload_to_hf.py
