@@ -9,7 +9,13 @@ VAL_PATH   = BASE_DIR / "dataset" / "split" / "val.csv"
 MODEL_NAME = "cardiffnlp/twitter-roberta-base"
 
 MODEL_DIR   = BASE_DIR / "model" / "twitter-roberta"
-HF_REPO_ID  = "FENGYU21/rumor-detection"          # HuggingFace 仓库
+HF_REPO_ID  = "FENGYU21/rumor-detection"          # RoBERTa HF 仓库
+
+BILSTM_MODEL_DIR = BASE_DIR / "model" / "bilstm_attention"
+BILSTM_HF_REPO   = "FarawayR1bosome/rumor-detection-bilstm"
+
+TFIDF_MODEL_DIR  = BASE_DIR / "model" / "tfidf_lr"
+TFIDF_HF_REPO    = "FarawayR1bosome/rumor-detection-tfidf"
 CACHE_DIR   = BASE_DIR / "model" / "cache"
 RESULTS_DIR = BASE_DIR / "train" / "results"
 

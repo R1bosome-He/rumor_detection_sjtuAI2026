@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import numpy as np
 import pandas as pd
+from huggingface_hub import hf_hub_download
 from sklearn.metrics import (
     accuracy_score,
     classification_report,
@@ -25,23 +26,36 @@ from sklearn.metrics import (
     f1_score,
 )
 
-from utils.config import BASE_DIR, VAL_PATH
+from utils.config import TFIDF_HF_REPO, TFIDF_MODEL_DIR, VAL_PATH
 from utils.data import preprocess_tweet
 
-MODEL_DIR = BASE_DIR / "model" / "tfidf_lr"
+
+def _load_pickle_or_download(model_dir, filename):
+    """本地加载 pickle，缺失则从 HuggingFace Hub 下载"""
+    local = Path(model_dir) / filename
+    if local.exists():
+        return local
+    print(f"  {filename} 未找到，从 {TFIDF_HF_REPO} 下载 ...")
+    return hf_hub_download(repo_id=TFIDF_HF_REPO, filename=filename)
 
 
 class TFIDFClassifier:
-    """加载训练好的 TF-IDF + LR 模型"""
+    """加载训练好的 TF-IDF + LR 模型，本地缺失时自动从 HF Hub 下载"""
 
     def __init__(self, model_dir=None):
-        model_dir = Path(model_dir or MODEL_DIR)
+        model_dir = Path(model_dir or TFIDF_MODEL_DIR)
+        model_dir.mkdir(parents=True, exist_ok=True)
 
-        with open(model_dir / "pipeline.pkl", "rb") as f:
+        p_path = _load_pickle_or_download(model_dir, "pipeline.pkl")
+        with open(p_path, "rb") as f:
             self.vectorizer = pickle.load(f)
-        with open(model_dir / "classifier.pkl", "rb") as f:
+
+        c_path = _load_pickle_or_download(model_dir, "classifier.pkl")
+        with open(c_path, "rb") as f:
             self.model = pickle.load(f)
-        with open(model_dir / "threshold.json", "r", encoding="utf-8") as f:
+
+        t_path = _load_pickle_or_download(model_dir, "threshold.json")
+        with open(t_path, "r", encoding="utf-8") as f:
             self.threshold = json.load(f)["threshold"]
 
     def classify(self, text: str) -> int:
