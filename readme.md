@@ -7,7 +7,7 @@
 本项目实现推文（Twitter/X）的谣言二分类，核心模型为 [cardiffnlp/twitter-roberta-base](https://huggingface.co/cardiffnlp/twitter-roberta-base) 微调。额外实现了 BiLSTM + Attention 与 TF-IDF + LR 两个轻量基线，并通过 RoBERTa : BiLSTM = 2 : 1 加权投票集成，验证集准确率达 **89.3%**。特色在于：
 
 - **可解释性**：利用 attention 权重提取证据词，调用 DeepSeek-Reasoner 生成中文分析
-- **开箱即用**：RoBERTa 权重托管在 [FENGYU21/rumor-detection](https://huggingface.co/FENGYU21/rumor-detection)，BiLSTM/TF-IDF 权重随仓库发布
+- **开箱即用**：所有模型权重托管在 HuggingFace Hub，本地缺失时自动下载：RoBERTa → [FENGYU21/rumor-detection](https://huggingface.co/FENGYU21/rumor-detection)，BiLSTM → [FarawayR1bosome/rumor-detection-bilstm](https://huggingface.co/FarawayR1bosome/rumor-detection-bilstm)，TF-IDF → [FarawayR1bosome/rumor-detection-tfidf](https://huggingface.co/FarawayR1bosome/rumor-detection-tfidf)
 - **模块化设计**：训练、推理、评估、LLM 解释、投票集成各自独立
 
 ## 🚀 快速开始
