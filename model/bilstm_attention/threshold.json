@@ -1,9 +1,0 @@
-{
-  "name": "bilstm_attn",
-  "best_epoch": 12,
-  "argmax_accuracy": 0.8625,
-  "argmax_f1": 0.8318042813455657,
-  "threshold": 0.4740895628929138,
-  "threshold_accuracy": 0.865,
-  "threshold_f1": 0.8363636363636363
-}

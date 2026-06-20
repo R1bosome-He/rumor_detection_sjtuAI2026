@@ -1,5 +1,4 @@
 {
-  "add_cross_attention": false,
   "architectures": [
     "RobertaForSequenceClassification"
   ],
@@ -14,16 +13,15 @@
   "hidden_size": 768,
   "initializer_range": 0.02,
   "intermediate_size": 3072,
-  "is_decoder": false,
   "layer_norm_eps": 1e-05,
   "max_position_embeddings": 514,
   "model_type": "roberta",
   "num_attention_heads": 12,
   "num_hidden_layers": 12,
   "pad_token_id": 1,
-  "tie_word_embeddings": true,
-  "transformers_version": "5.9.0",
+  "position_embedding_type": "absolute",
+  "transformers_version": "4.57.3",
   "type_vocab_size": 1,
-  "use_cache": false,
+  "use_cache": true,
   "vocab_size": 50265
 }

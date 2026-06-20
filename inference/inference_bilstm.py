@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import numpy as np
 import pandas as pd
 import torch
+from huggingface_hub import hf_hub_download
 from sklearn.metrics import (
     accuracy_score,
     classification_report,
@@ -26,33 +27,36 @@ from sklearn.metrics import (
 )
 
 from model.bilstm_attention import BiLSTMAttention
-from train.train_bilstm import (
-    BILSTM_MODEL_DIR,
-    PAD_IDX,
-    UNK_IDX,
-    BiLSTMDataset,
-    _tokenize,
-)
-from utils.config import VAL_PATH
+from train.train_bilstm import PAD_IDX, UNK_IDX, _tokenize
+from utils.config import BILSTM_HF_REPO, BILSTM_MODEL_DIR, VAL_PATH
+
+
+def _load_or_download(model_dir, filename):
+    """本地加载，缺失则从 HuggingFace Hub 下载"""
+    local = Path(model_dir) / filename
+    if local.exists():
+        return local
+    print(f"  {filename} 未找到，从 {BILSTM_HF_REPO} 下载 ...")
+    return hf_hub_download(repo_id=BILSTM_HF_REPO, filename=filename)
 
 
 class BiLSTMClassifier:
-    """加载训练好的 BiLSTM + Attention 模型，提供与 RumourDetectClass 一致的接口"""
+    """加载训练好的 BiLSTM + Attention 模型，本地缺失时自动从 HF Hub 下载"""
 
     def __init__(self, model_dir=None):
         model_dir = Path(model_dir or BILSTM_MODEL_DIR)
+        model_dir.mkdir(parents=True, exist_ok=True)
 
-        # 加载 checkpoint
-        ckpt = torch.load(
-            model_dir / "checkpoint.pt",
-            map_location="cpu",
-            weights_only=False,  # 允许 vocab dict
-        )
+        # 加载 checkpoint（本地优先，缺失自动下载）
+        ckpt_path = _load_or_download(model_dir, "checkpoint.pt")
+        ckpt = torch.load(ckpt_path, map_location="cpu",
+                          weights_only=False)
         self.vocab = ckpt["vocab"]
         self.config = ckpt["config"]
 
         # 加载阈值
-        with open(model_dir / "threshold.json", "r", encoding="utf-8") as f:
+        thresh_path = _load_or_download(model_dir, "threshold.json")
+        with open(thresh_path, "r", encoding="utf-8") as f:
             threshold_info = json.load(f)
         self.threshold = threshold_info.get("threshold", 0.5)
 
