@@ -6,3 +6,4 @@ scikit-learn
 transformers
 huggingface_hub
 requests
+python-dotenv

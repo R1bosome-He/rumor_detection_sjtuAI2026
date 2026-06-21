@@ -5,7 +5,9 @@ import requests
 
 @dataclass
 class LLMConfig:
-    api_key: str = "sk-qTuQYYdsMw21GBbJHbQfZA"
+    "LLM 配置"
+
+    api_key: str = ""  # 请设置环境变量 LLM_API_KEY 或在此处填入
     base_url: str = "https://models.sjtu.edu.cn/api/v1"
     model: str = "deepseek-reasoner"
     temperature: float = 0.3
@@ -19,7 +21,9 @@ def explain(text: str, label: int, evidence: list, config: LLMConfig = None) -> 
     """
     if config is None:
         config = LLMConfig()
-        
+    if not config.api_key:
+        config.api_key = os.environ.get("LLM_API_KEY", "")
+
     label_str = "【谣言 (Rumor)】" if label == 1 else "【非谣言 (Non-Rumor)】"
     
     # 格式化特征词作为 Prompt 的一部分

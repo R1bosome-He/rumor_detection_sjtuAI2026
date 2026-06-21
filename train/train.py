@@ -3,13 +3,45 @@ import inspect, json, sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import numpy as np, torch
+import numpy as np, pandas as pd, torch
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, f1_score
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, DataCollatorWithPadding, EarlyStoppingCallback, TrainingArguments, set_seed
-from utils.config import CACHE_DIR, CONFIG, EARLY_STOPPING_PATIENCE, MAX_LENGTH, MODEL_DIR, MODEL_NAME, RESULTS_DIR
-from utils.data import RumorDataset, load_data
+from utils.config import BASE_DIR, CACHE_DIR, CONFIG, EARLY_STOPPING_PATIENCE, MAX_LENGTH, MODEL_DIR, MODEL_NAME, RESULTS_DIR
+from utils.data import RumorDataset, preprocess_tweet, clean_train_data
 from utils.metrics import compute_metrics, find_best_threshold
 from train.trainer import WeightedTrainer
+
+# JSONL 数据路径
+TRAIN_JSON = BASE_DIR / "dataset" / "split" / "train.json"
+VAL_JSON   = BASE_DIR / "dataset" / "split" / "val.json"
+
+
+def _load_jsonl(path):
+    """读取 JSONL，返回 DataFrame（兼容原有清洗和 Dataset 流程）"""
+    rows = []
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            obj = json.loads(line.strip())
+            if not obj:
+                continue
+            rows.append({"text": obj["text"],
+                         "label": int(obj["label"]),
+                         "id": obj.get("id", ""),
+                         "event": obj.get("event", 0)})
+    return pd.DataFrame(rows)
+
+
+def load_data_from_json():
+    """从 JSONL 加载并预处理，返回 (train_df, val_df)"""
+    train_df = _load_jsonl(TRAIN_JSON)
+    val_df = _load_jsonl(VAL_JSON)
+
+    train_df["text"] = train_df["text"].apply(preprocess_tweet)
+    val_df["text"] = val_df["text"].apply(preprocess_tweet)
+
+    train_df = clean_train_data(train_df)
+    print(f"训练集: {len(train_df)} 条, 验证集: {len(val_df)} 条")
+    return train_df, val_df
 
 def build_training_args(config):
     output_dir = RESULTS_DIR / config["name"]
@@ -109,7 +141,7 @@ def save_best_model(result, tokenizer):
     print(f"\nModel saved to {MODEL_DIR}")
 
 def main():
-    train_df, val_df = load_data()
+    train_df, val_df = load_data_from_json()
     print(f"Loading model {MODEL_NAME} ...")
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, cache_dir=str(CACHE_DIR))
     train_dataset = RumorDataset(train_df["text"].tolist(), train_df["label"].tolist(), tokenizer)

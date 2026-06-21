@@ -14,7 +14,7 @@ LLM 谣言检测结果解释模块
     - 任何兼容 OpenAI chat/completions 接口的服务
 
 环境变量:
-    LLM_API_KEY       API 密钥 (可选，已内置默认值)
+    LLM_API_KEY       API 密钥 (不设置则运行时会提示输入)
     LLM_BASE_URL      接口地址 (可选，默认 https://models.sjtu.edu.cn/api/v1)
     LLM_MODEL         模型名称 (可选，默认 deepseek-reasoner)
 """
@@ -22,6 +22,25 @@ LLM 谣言检测结果解释模块
 import os
 from dataclasses import dataclass
 from typing import Optional, List, Dict
+from dotenv import load_dotenv
+
+load_dotenv()  # 确保从 .env 文件加载环境变量
+
+# 运行时注入的 key，优先级高于环境变量
+_runtime_key: Optional[str] = None
+
+
+def set_api_key(key: str):
+    """在程序运行时设置 API key（无需修改环境变量）"""
+    global _runtime_key
+    _runtime_key = key.strip()
+
+
+def _get_api_key() -> str:
+    """获取 API key：set_api_key() > 环境变量 > 空字符串"""
+    if _runtime_key:
+        return _runtime_key
+    return os.environ.get("LLM_API_KEY", "")
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -31,23 +50,36 @@ from typing import Optional, List, Dict
 
 @dataclass
 class LLMConfig:
-    """LLM API 配置，支持从环境变量覆盖"""
+    """LLM API 配置"""
 
-    api_key: str = "sk-qTuQYYdsMw21GBbJHbQfZA"
+    api_key: str = ""  # 通过环境变量 LLM_API_KEY 设置
     base_url: str = "https://models.sjtu.edu.cn/api/v1"
     model: str = "deepseek-reasoner"
     temperature: float = 0.3
     max_tokens: int = 512
     timeout: int = 30
 
+    def __post_init__(self):
+        """如果 api_key 为空字符串，阻止后续调用并给出清晰的设置指引"""
+        if not self.api_key.strip():
+            raise ValueError(
+                "LLM API key 未设置。请通过以下任一方式提供：\n"
+                "  1. 创建 .env 文件 (推荐): cp .env.example .env 并填入 LLM_API_KEY\n"
+                "  2. 设置环境变量: export LLM_API_KEY=your-key (Linux/macOS)\n"
+                "  3. 设置环境变量: set LLM_API_KEY=your-key (Windows CMD)\n"
+                "  4. 调用 set_api_key('your-key') 在代码中注入"
+            )
+
     @classmethod
     def from_env(cls) -> "LLMConfig":
-        """从环境变量读取配置，不存在则使用默认值"""
-        api_key = os.environ.get(
-            "LLM_API_KEY", "sk-qTuQYYdsMw21GBbJHbQfZA"
-        )
+        """从 set_api_key() 或环境变量读取配置"""
+        api_key = _get_api_key()
         if not api_key:
-            raise ValueError("请设置环境变量 LLM_API_KEY")
+            raise ValueError(
+                "LLM API key 未设置。请通过以下方式提供：\n"
+                "  创建 .env 文件 (推荐): cp .env.example .env 并填入 LLM_API_KEY\n"
+                "  或运行后在提示符下直接输入"
+            )
         return cls(
             api_key=api_key,
             base_url=os.environ.get(
@@ -68,11 +100,8 @@ SYSTEM_PROMPT = (
     "你的任务是为该判断结果生成一段清晰、简洁的中文解释。\n"
     "\n"
     "解释原则：\n"
-    "- 如果判定为谣言（label=1）：说明该推文为什么像谣言 —— "
-    "例如：包含未经证实的说法、使用煽动性语言、缺乏可信来源、"
-    "情绪操控、与已知事实不符等。\n"
-    "- 如果判定为非谣言（label=0）：说明该推文为什么看起来可信 —— "
-    "例如：报道客观事实、引用了官方或可查证来源、语气中立、信息可验证等。\n"
+    "- 如果判定为谣言（label=1）：说明该推文为什么像谣言"
+    "- 如果判定为非谣言（label=0）：说明该推文为什么看起来可信"
     "\n"
     "要求：\n"
     "- 解释长度为 2-4 句中文。\n"

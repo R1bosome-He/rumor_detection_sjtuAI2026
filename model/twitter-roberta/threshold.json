@@ -9,9 +9,9 @@
     "warmup_ratio": 0.06,
     "seed": 42
   },
-  "argmax_accuracy": 0.8927680798004988,
-  "argmax_f1": 0.8746355685131195,
-  "threshold": 0.4980926811695099,
-  "threshold_accuracy": 0.8952618453865336,
-  "threshold_f1": 0.877906976744186
+  "argmax_accuracy": 0.895,
+  "argmax_f1": 0.88,
+  "threshold": 0.6452356576919556,
+  "threshold_accuracy": 0.8975,
+  "threshold_f1": 0.8825214899713467
 }
