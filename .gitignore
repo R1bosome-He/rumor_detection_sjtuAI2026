@@ -25,6 +25,9 @@ train/results/
 *.swp
 *.swo
 
+# Environment
+.env
+
 # OS
 .DS_Store
 Thumbs.db

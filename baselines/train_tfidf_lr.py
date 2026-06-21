@@ -30,8 +30,8 @@ from sklearn.metrics import (
 from sklearn.pipeline import Pipeline
 
 
-TRAIN_PATH = "dataset/split/train.json"
-VAL_PATH = "dataset/split/val.json"
+TRAIN_PATH = "../dataset/split/train.json"
+VAL_PATH = "../dataset/split/val.json"
 
 
 def read_json_lines(path: str) -> pd.DataFrame:

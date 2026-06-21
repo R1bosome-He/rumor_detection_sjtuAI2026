@@ -10,21 +10,38 @@
 - **开箱即用**：所有模型权重托管在 HuggingFace Hub，本地缺失时自动下载：RoBERTa → [FENGYU21/rumor-detection](https://huggingface.co/FENGYU21/rumor-detection)，BiLSTM → [FarawayR1bosome/rumor-detection-bilstm](https://huggingface.co/FarawayR1bosome/rumor-detection-bilstm)，TF-IDF → [FarawayR1bosome/rumor-detection-tfidf](https://huggingface.co/FarawayR1bosome/rumor-detection-tfidf)
 - **模块化设计**：训练、推理、评估、LLM 解释、投票集成各自独立
 
+## 🎯 核心功能
+
+- **多模型谣言检测**：集成 RoBERTa、BiLSTM + Attention、TF-IDF + LR 三条技术路线，覆盖从轻量基线到大规模预训练模型的完整谱系
+- **加权投票集成**：RoBERTa : BiLSTM = 2 : 1 权重投票，融合深层语义理解与序列建模的互补视角，验证集准确率 89.3%
+- **证据词提取**：利用 RoBERTa 最后一层 attention 权重自动定位推文中对分类决策贡献最大的关键 token，经 BPE 合并与停用词过滤后输出 top-5 证据词
+- **LLM 可解释性**：结合证据词与分类结果构造 prompt，调用 DeepSeek-Reasoner 生成 2-4 句中文分析，说明模型判断依据
+- **模块化设计**：训练、推理、评估、LLM 解释、投票集成各自独立为独立模块，可灵活组合调用
+
 ## 🚀 快速开始
 
 ```bash
-# 安装
+# 克隆仓库
 git clone https://github.com/R1bosome-He/rumor_detection_sjtuAI2026.git
 cd rumor_detection_sjtuAI2026
+
+# 创建虚拟环境
+python -m venv venv
+# Windows:
+venv\Scripts\activate
+# Linux / macOS:
+source venv/bin/activate
+
+# 安装依赖
 pip install -r requirements.txt
 
 # 推理（含 LLM 解释）          # 评估（双模型投票）
 python main.py                   python -m inference.ensemble --eval
 ```
 
-> RoBERTa 权重首次自动从 HuggingFace 下载（~500MB），BiLSTM / TF-IDF 权重已在仓库中。
+> 运行相应的模型，权重将自动从 HuggingFace 下载。
 
-## 📊 性能
+## 📊 性能评估
 
 验证集 401 条推文，投票集成（RoBERTa : BiLSTM = 2 : 1）：
 
@@ -41,7 +58,7 @@ python main.py                   python -m inference.ensemble --eval
 
 | | RoBERTa | BiLSTM | TF-IDF | **投票集成** |
 |---|---|---|---|---|
-| 准确率 | — | 86.5% | 84.0% | **89.3%** |
+| 准确率 | **89.3%** | 86.5% | 84.0% | **89.3%** |
 | 参数量 | 125M | 2M | 5k | — |
 | 训练时间 | ~15 min (GPU) | ~5 min (CPU) | **~3 sec (CPU)** | — |
 
@@ -102,6 +119,17 @@ python main.py                   python -m inference.ensemble --eval
 │   ├── data.py                 # 数据加载与预处理
 │   └── metrics.py              # 评估指标与阈值搜索
 ├── dataset/split/              # 训练/验证集（JSONL）
+├── scripts/
+│   └── clean_to_jsonl.py        # 原始数据 → JSONL 清洗脚本
+├── baselines/                   # 基线实验（独立于主项目）
+│   ├── train_tfidf_lr.py        # TF-IDF + LR 单脚本基线
+│   └── tfidf_lr_v1/             # 旧版 TF-IDF 基线（独立项目）
+│       ├── main.py
+│       ├── train/train.py
+│       ├── inference/
+│       ├── model/
+│       ├── llm/
+│       └── saved_models/
 └── requirements.txt
 ```
 
@@ -120,10 +148,18 @@ python main.py                   python -m inference.ensemble --eval
 
 ## ⚙️ 配置
 
+**推荐方式** —— 使用 `.env` 文件（已加入 `.gitignore`，不会提交至仓库）：
+
+```bash
+cp .env.example .env   # 复制模板，然后编辑 .env 填入实际值
+```
+
 | 环境变量 | 说明 | 默认值 |
 |----------|------|--------|
 | `LLM_API_KEY` | LLM API 密钥 | 运行时空缺则提示输入 |
 | `LLM_BASE_URL` | API 地址 | `https://models.sjtu.edu.cn/api/v1` |
 | `LLM_MODEL` | 模型名 | `deepseek-reasoner` |
+
+项目启动时自动通过 `python-dotenv` 加载 `.env` 中的配置，无需手动 export。
 
 训练超参分别在 `train/train.py`（RoBERTa）、`train/train_bilstm.py`（BiLSTM）、`train/train_tfidf.py`（TF-IDF）的配置字典中修改。

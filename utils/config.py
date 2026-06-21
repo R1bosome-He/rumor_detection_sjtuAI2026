@@ -1,5 +1,8 @@
 """训练与推理配置常量"""
 from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()  # 自动从项目根目录 .env 加载环境变量
 
 BASE_DIR = Path(__file__).resolve().parent.parent                      
 

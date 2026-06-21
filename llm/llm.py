@@ -22,6 +22,9 @@ LLM 谣言检测结果解释模块
 import os
 from dataclasses import dataclass
 from typing import Optional, List, Dict
+from dotenv import load_dotenv
+
+load_dotenv()  # 确保从 .env 文件加载环境变量
 
 # 运行时注入的 key，优先级高于环境变量
 _runtime_key: Optional[str] = None
@@ -47,9 +50,9 @@ def _get_api_key() -> str:
 
 @dataclass
 class LLMConfig:
-    """LLM API 配置，支持从环境变量覆盖"""
+    """LLM API 配置"""
 
-    api_key: str = ""  # 必须通过环境变量 LLM_API_KEY 设置
+    api_key: str = ""  # 通过环境变量 LLM_API_KEY 设置
     base_url: str = "https://models.sjtu.edu.cn/api/v1"
     model: str = "deepseek-reasoner"
     temperature: float = 0.3
@@ -61,10 +64,10 @@ class LLMConfig:
         if not self.api_key.strip():
             raise ValueError(
                 "LLM API key 未设置。请通过以下任一方式提供：\n"
-                "  1. 设置环境变量: export LLM_API_KEY=your-key\n"
-                "  2. 设置环境变量: set LLM_API_KEY=your-key  (Windows CMD)\n"
-                "  3. 设置环境变量: $env:LLM_API_KEY='your-key' (PowerShell)\n"
-                "  4. 修改 llm.py 中 LLMConfig 的默认 api_key 值"
+                "  1. 创建 .env 文件 (推荐): cp .env.example .env 并填入 LLM_API_KEY\n"
+                "  2. 设置环境变量: export LLM_API_KEY=your-key (Linux/macOS)\n"
+                "  3. 设置环境变量: set LLM_API_KEY=your-key (Windows CMD)\n"
+                "  4. 调用 set_api_key('your-key') 在代码中注入"
             )
 
     @classmethod
@@ -74,8 +77,7 @@ class LLMConfig:
         if not api_key:
             raise ValueError(
                 "LLM API key 未设置。请通过以下方式提供：\n"
-                "  设置环境变量: export LLM_API_KEY=your-key  (Linux/macOS)\n"
-                "  设置环境变量: set LLM_API_KEY=your-key    (Windows CMD)\n"
+                "  创建 .env 文件 (推荐): cp .env.example .env 并填入 LLM_API_KEY\n"
                 "  或运行后在提示符下直接输入"
             )
         return cls(
